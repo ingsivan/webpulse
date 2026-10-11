@@ -3,11 +3,8 @@ name: Tests
 on:
   push:
     branches:
-      - master
-      - '*.x'
+      - main
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
 
 permissions:
   contents: read
@@ -39,6 +36,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Check code style
+        run: vendor/bin/pint --test
+
       - name: Copy environment file
         run: cp .env.example .env
 
@@ -47,3 +47,31 @@ jobs:
 
       - name: Execute tests
         run: php artisan test
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Docker image
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -t webpulse .
+
+      - name: Boot the container and check health
+        run: |
+          docker run -d --name webpulse -p 8080:8080 \
+            -e APP_KEY="base64:$(openssl rand -base64 32)" \
+            -e APP_URL=http://localhost:8080 \
+            webpulse
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/up > /dev/null; then
+              curl -fsS http://localhost:8080/ | grep -q "WebPulse" && exit 0
+            fi
+            sleep 2
+          done
+          docker logs webpulse
+          exit 1
