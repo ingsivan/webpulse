@@ -7,6 +7,13 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     /**
      * Replaces DNS lookups with a fixed host-to-IP map so audits never touch the network.
      *

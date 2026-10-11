@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Site;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,5 +24,13 @@ class SiteFactory extends Factory
             'is_monitored' => false,
             'check_interval_minutes' => 60,
         ];
+    }
+
+    public function monitored(): static
+    {
+        return $this->state([
+            'user_id' => User::factory(),
+            'is_monitored' => true,
+        ]);
     }
 }

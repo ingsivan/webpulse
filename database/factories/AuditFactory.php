@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\AuditStatus;
-use App\Models\Site;
 use App\Models\Audit;
+use App\Models\Site;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,6 +22,7 @@ class AuditFactory extends Factory
         return [
             'site_id' => Site::factory(),
             'status' => AuditStatus::Completed,
+            'progress' => 100,
             'http_status' => 200,
             'load_time_ms' => fake()->numberBetween(150, 4000),
             'pages_crawled' => fake()->numberBetween(1, 25),
@@ -32,5 +33,32 @@ class AuditFactory extends Factory
             'started_at' => now()->subMinute(),
             'finished_at' => now(),
         ];
+    }
+
+    public function pending(): static
+    {
+        return $this->state([
+            'status' => AuditStatus::Pending,
+            'progress' => 0,
+            'http_status' => null,
+            'load_time_ms' => null,
+            'pages_crawled' => 0,
+            'performance_score' => null,
+            'seo_score' => null,
+            'links_score' => null,
+            'overall_score' => null,
+            'started_at' => null,
+            'finished_at' => null,
+        ]);
+    }
+
+    public function failed(): static
+    {
+        return $this->pending()->state([
+            'status' => AuditStatus::Failed,
+            'progress' => 100,
+            'error_message' => 'Connection refused',
+            'finished_at' => now(),
+        ]);
     }
 }

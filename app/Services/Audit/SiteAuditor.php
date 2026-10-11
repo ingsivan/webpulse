@@ -22,10 +22,29 @@ class SiteAuditor
         private ScoreCalculator $scores,
     ) {}
 
+    /**
+     * Creates a pending audit and runs it right away.
+     */
     public function audit(Site $site): Audit
     {
-        $audit = $site->audits()->create([
+        return $this->run($this->start($site));
+    }
+
+    /**
+     * Creates a pending audit that a queued job will run later.
+     */
+    public function start(Site $site): Audit
+    {
+        return $site->audits()->create(['status' => AuditStatus::Pending]);
+    }
+
+    public function run(Audit $audit): Audit
+    {
+        $site = $audit->site;
+
+        $audit->update([
             'status' => AuditStatus::Running,
+            'progress' => 5,
             'started_at' => now(),
         ]);
 
@@ -35,6 +54,8 @@ class SiteAuditor
             return $this->fail($audit, $exception->getMessage());
         }
 
+        $audit->update(['progress' => 20]);
+
         $findings = $this->checkPerformance($page);
 
         if ($page->response->successful()) {
@@ -43,8 +64,8 @@ class SiteAuditor
             $findings = [
                 ...$findings,
                 ...$analysis->findings,
-                ...$this->checkLinks($analysis->links),
-                ...$this->checkImages($analysis->images),
+                ...$this->checkLinks($audit, $analysis->links),
+                ...$this->checkImages($audit, $analysis->images),
             ];
         } else {
             $findings[] = new AuditFinding(
@@ -61,6 +82,7 @@ class SiteAuditor
         $audit->update([
             ...$this->scores->calculate($findings),
             'status' => AuditStatus::Completed,
+            'progress' => 100,
             'http_status' => $page->response->status(),
             'load_time_ms' => $page->durationMs,
             'pages_crawled' => 1,
@@ -102,11 +124,14 @@ class SiteAuditor
      * @param  list<string>  $links
      * @return list<AuditFinding>
      */
-    private function checkLinks(array $links): array
+    private function checkLinks(Audit $audit, array $links): array
     {
         $findings = [];
+        $links = array_slice($links, 0, config('webpulse.max_links_checked'));
 
-        foreach (array_slice($links, 0, config('webpulse.max_links_checked')) as $link) {
+        foreach ($links as $index => $link) {
+            $this->reportProgress($audit, 20, 70, $index, count($links));
+
             try {
                 $status = $this->http->head($link)->response->status();
             } catch (UnsafeUrlException|ConnectionException) {
@@ -127,11 +152,14 @@ class SiteAuditor
      * @param  list<string>  $images
      * @return list<AuditFinding>
      */
-    private function checkImages(array $images): array
+    private function checkImages(Audit $audit, array $images): array
     {
         $findings = [];
+        $images = array_slice($images, 0, config('webpulse.max_images_checked'));
 
-        foreach (array_slice($images, 0, config('webpulse.max_images_checked')) as $image) {
+        foreach ($images as $index => $image) {
+            $this->reportProgress($audit, 70, 95, $index, count($images));
+
             try {
                 $response = $this->http->head($image)->response;
             } catch (UnsafeUrlException|ConnectionException) {
@@ -156,10 +184,19 @@ class SiteAuditor
         return $findings;
     }
 
+    /**
+     * Moves the progress bar between two percentages as items are checked.
+     */
+    private function reportProgress(Audit $audit, int $from, int $to, int $done, int $total): void
+    {
+        $audit->update(['progress' => $from + (int) floor(($to - $from) * $done / max(1, $total))]);
+    }
+
     private function fail(Audit $audit, string $reason): Audit
     {
         $audit->update([
             'status' => AuditStatus::Failed,
+            'progress' => 100,
             'error_message' => $reason,
             'finished_at' => now(),
         ]);
