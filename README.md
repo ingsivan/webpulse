@@ -41,7 +41,7 @@ php artisan test
 ## Hoja de ruta
 
 - [x] Proyecto base y modelos `Site`, `Audit`, `AuditIssue`
-- [ ] Servicio `SiteAuditor` (estado, carga, SEO, imágenes, enlaces) con protección contra SSRF
+- [x] Servicio `SiteAuditor` (estado, carga, SEO, imágenes, enlaces) con protección contra SSRF
 - [ ] Auditorías en cola con progreso en vivo (Livewire)
 - [ ] Dashboard con puntuaciones e historial
 - [ ] Monitoreo programado con alertas por correo
