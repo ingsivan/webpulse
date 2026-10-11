@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
             $this->seedHistory($site, $baseline, 14);
         }
 
-        foreach (['laravel.com' => 88, 'php.net' => 71, 'tailwindcss.com' => 95] as $host => $baseline) {
+        foreach (['noticias.example.org' => 88, 'docs.example.net' => 71, 'cafeteria.example.com' => 95] as $host => $baseline) {
             $this->seedHistory(Site::factory()->create(['name' => $host, 'url' => "https://{$host}/"]), $baseline, 3);
         }
     }
