@@ -9,7 +9,7 @@
 
 ![Resultado de una auditoría](docs/screenshots/audit.png)
 
-> **Demo:** pendiente de publicar. Ver [Despliegue](docs/despliegue.md) para levantarla en Render en unos minutos.
+> **Demo:** <https://webpulse-sf4g.onrender.com> (entra con **demo@webpulse.test** / **password**). Está en el plan gratis de Render: la primera visita tras un rato sin uso puede tardar unos 50 segundos.
 
 ## Funciones
 
@@ -89,7 +89,7 @@ Los tests simulan las respuestas HTTP y el DNS, así que nunca salen a internet.
 - [x] Monitoreo programado con alertas por correo
 - [x] Reporte PDF
 - [x] CI con GitHub Actions y Docker
-- [ ] Publicar la demo
+- [x] Publicar la demo
 - [ ] Auditar varias páginas por sitio (crawler)
 - [ ] Métricas de Core Web Vitals con un navegador real
 
